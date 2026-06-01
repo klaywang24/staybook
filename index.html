@@ -91,7 +91,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .dinfo .drow{display:flex;gap:26px;margin-top:14px}
 .dinfo .drow .dn{font-family:'Oswald';font-weight:600;font-size:20px}
 .dinfo .drow .dl{font-size:9.5px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-family:'Oswald'}
-.dclose{position:fixed;top:22px;right:22px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:61}.dDel{display:block;width:100%;margin-top:18px;background:transparent;border:1px solid #5a2a2a;color:#e87a7a;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit}.dDel:active{background:rgba(232,122,122,.12)}.dEdit{display:block;width:100%;margin-top:18px;background:var(--accent);border:none;color:#1A1208;padding:12px;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.dclose{position:fixed;top:22px;right:22px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:61}.dDel{display:block;width:100%;margin-top:18px;background:transparent;border:1px solid #5a2a2a;color:#e87a7a;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit}.dDel:active{background:rgba(232,122,122,.12)}.dEdit{display:block;width:100%;margin-top:18px;background:var(--accent);border:none;color:#1A1208;padding:12px;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}.geo-btn{display:inline-block;margin:0 0 12px;background:transparent;border:1px solid var(--accent);color:var(--accent);padding:7px 13px;border-radius:9px;font-size:13px;cursor:pointer;font-family:inherit}.geo-btn:disabled{opacity:.5}
 .sheet-add{position:fixed;left:50%;transform:translateX(-50%) translateY(100%);bottom:0;width:100%;max-width:480px;z-index:70;background:#16120E;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 20px max(24px,env(safe-area-inset-bottom));transition:transform .35s cubic-bezier(.3,.9,.3,1);max-height:88vh;overflow-y:auto}
 .sheet-add.on{transform:translateX(-50%) translateY(0)}
 .sheet-mask{position:fixed;inset:0;z-index:69;background:rgba(6,5,4,.6);backdrop-filter:blur(3px);display:none}
@@ -249,6 +249,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
   <h3 id="addTitle">添加房卡</h3><div class="sh-sub" id="addSubtitle"></div>
   <div class="fld"><label>子品牌</label><select id="fBrand"></select></div>
   <div class="fld"><label>酒店名称</label><input id="fHotel" placeholder="如 Waldorf Astoria Shanghai on the Bund"></div>
+  <button type="button" id="geoBtn" class="geo-btn">📍 用当前位置填写</button>
   <div class="frow"><div class="fld"><label>国家</label><select id="fCountry"></select><input id="fCountryM" placeholder="手动输入国家" style="display:none;margin-top:8px"></div><div class="fld"><label>城市</label><select id="fCity"></select><input id="fCityM" placeholder="手动输入城市" style="display:none;margin-top:8px"></div></div>
   <div class="fld"><label>入住日期</label><input id="fDate" type="month"></div>
   <div class="frow"><div class="fld" style="flex:0 0 110px"><label>入住晚数</label><input id="fNights" type="number" value="1" min="1"></div>
@@ -305,6 +306,8 @@ function onCityChange(){if($('fCountry').value==='__other'){$('fCityM').style.di
 function setLocation(country,city){if(country&&COUNTRY_CITIES[country]){$('fCountry').value=country;$('fCountryM').style.display='none';$('fCountryM').value='';fillCitySel(country);$('fCity').style.display='block';if(city&&COUNTRY_CITIES[country].indexOf(city)>-1){$('fCity').value=city;$('fCityM').style.display='none';$('fCityM').value='';}else if(city){$('fCity').value='__other';$('fCityM').style.display='block';$('fCityM').value=city;}else{$('fCity').value='';$('fCityM').style.display='none';$('fCityM').value='';}}else{$('fCountry').value='__other';$('fCountryM').style.display='block';$('fCountryM').value=country||'';$('fCity').style.display='none';$('fCityM').style.display='block';$('fCityM').value=city||'';}}
 function getCountry(){return $('fCountryM').style.display!=='none'?$('fCountryM').value.trim():$('fCountry').value;}
 function getCity(){return $('fCityM').style.display!=='none'?$('fCityM').value.trim():$('fCity').value;}
+function nearestCity(lon,lat){let best=null,bd=1e9;for(const co in COUNTRY_CITIES){for(const ci of COUNTRY_CITIES[co]){const ll=CITY_LL[ci];if(!ll)continue;const dx=(ll[0]-lon)*Math.cos(lat*Math.PI/180),dy=ll[1]-lat,d=dx*dx+dy*dy;if(d<bd){bd=d;best={country:co,city:ci};}}}return best;}
+function geoCheckin(){const b=$('geoBtn');if(!navigator.geolocation){alert('当前环境不支持定位');return;}b.textContent='定位中…';b.disabled=true;navigator.geolocation.getCurrentPosition(pos=>{const r=nearestCity(pos.coords.longitude,pos.coords.latitude);if(r)setLocation(r.country,r.city);b.textContent='📍 用当前位置填写';b.disabled=false;},()=>{alert('无法获取定位，请手动选择');b.textContent='📍 用当前位置填写';b.disabled=false;},{enableHighAccuracy:false,timeout:8000,maximumAge:60000});}
 
 const DEFAULT_CARDS={
  m:[{brand:'Ritz-Carlton',hotel:'The Ritz-Carlton Shanghai, Pudong',city:'上海',country:'中国',nights:2,date:'2025-04'},
@@ -448,6 +451,7 @@ function openAdd(g,edit){if(!user){showAuth();return;}editingId=edit?edit.id:nul
 $('addCancel').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};$('addMask').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};
 $('pickPhoto').onclick=()=>$('photoInput').click();
 $('fCountry').onchange=onCountryChange;$('fCity').onchange=onCityChange;
+$('geoBtn').onclick=geoCheckin;
 $('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async ev=>{pendingPhoto=await resizeImg(ev.target.result,900);$('photoPrev').style.backgroundImage=`url('${pendingPhoto}')`;};r.readAsDataURL(f);};
 $('addSave').onclick=async()=>{
   const btn=$('addSave');btn.disabled=true;btn.textContent='保存中…';
