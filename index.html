@@ -151,6 +151,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .authbox input:focus{outline:none;border-color:var(--accent)}
 .authbtns{display:flex;gap:10px;margin-top:4px}
 .authmsg{color:var(--accent);font-size:12px;margin-top:14px;min-height:16px;line-height:1.5}
+.authskip{margin-top:16px;color:var(--muted);font-size:13px;cursor:pointer}.authskip:active{opacity:.6}
 </style>
 </head>
 <body>
@@ -188,7 +189,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 
   <div class="screen" id="scMe">
     <div class="phead"><div class="ey">Profile</div><h1>我</h1></div>
-    <div class="prof"><div class="avatar" id="avatarLetter">K</div><div><div class="pn" id="meEmail">—</div><div class="pe">酒店收藏家 · 3 个忠诚度计划</div></div></div>
+    <div class="prof"><div class="avatar" id="avatarLetter">K</div><div><div class="pn" id="meEmail">游客模式</div><div class="pe" id="meSub">本地浏览中 · 登录后多设备同步</div></div></div>
     <div class="sec-t">会员资格 · Memberships</div>
     <div id="memberships"></div>
     <div class="sec-t">设置 · Settings</div>
@@ -199,12 +200,13 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
       <div class="setrow">分享我的卡包<span class="ar">›</span></div>
       <div class="setrow">关于 Staybook<span class="ar">›</span></div>
     </div>
-    <div class="note">会员号/等级可编辑；合格夜按各集团住宿自动累计。数据已云端同步。</div>
-    <button class="btn ghost" id="btnLogout" style="width:100%;margin-top:6px">退出登录</button>
+    <div class="note" id="meNote">会员号/等级可编辑；合格夜按各集团住宿自动累计。当前为游客模式，数据仅存在此设备；登录后云端同步、多设备通用。</div>
+    <button class="btn primary" id="btnAuth" style="width:100%;margin-top:10px">登录 / 注册 · 同步云端</button>
   </div>
 </div>
 
 <div class="auth" id="authScreen"><div class="glow2"></div>
+  <button class="dclose" id="authClose" style="z-index:99">✕</button>
   <div class="authbox">
     <div class="authlogo">Staybook</div>
     <div class="authsub">登录后房卡收藏云端同步，多设备通用</div>
@@ -212,6 +214,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
     <input id="authPw" type="password" placeholder="密码（至少 6 位）" autocomplete="current-password">
     <div class="authbtns"><button class="btn primary" id="btnSignin">登录</button><button class="btn ghost" id="btnSignup">注册</button></div>
     <div class="authmsg" id="authMsg"></div>
+    <div class="authskip" id="authSkip">先随便逛逛 →</div>
   </div>
 </div>
 
@@ -306,6 +309,12 @@ const SUPA_URL='https://fnfoyntovduuiweknsgj.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuZm95bnRvdmR1dWl3ZWtuc2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyODkyMjAsImV4cCI6MjA5NTg2NTIyMH0.Ktjuso6KlBF3bhwoWGULL8SWURJkbaVemu9KDxyw9Xg';
 const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
 let user=null;
+/* ---------- local (guest) store ---------- */
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function saveLocal(){if(!user)lsSet('sb_guest',{cards,mem:MEM,settings});}
+function seedDemo(){cards={m:[],h:[],y:[]};Object.keys(DEFAULT_CARDS).forEach(g=>{DEFAULT_CARDS[g].forEach(c=>cards[g].push(Object.assign({id:'L'+Math.random().toString(36).slice(2),photo:null},c)));});MEM=JSON.parse(JSON.stringify(DEFAULT_MEM));settings={cleanPhoto:true};}
+function loadLocal(){const s=lsGet('sb_guest');if(s&&s.cards){cards=s.cards;MEM=s.mem||JSON.parse(JSON.stringify(DEFAULT_MEM));settings=s.settings||{cleanPhoto:true};}else{seedDemo();saveLocal();}}
 function dataURLtoBlob(d){const p=d.split(',');const mime=(p[0].match(/:(.*?);/)||[])[1]||'image/jpeg';const bin=atob(p[1]);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return new Blob([u8],{type:mime});}
 async function loadAll(){
   const {data:prof}=await sb.from('profiles').select('*').eq('user_id',user.id).maybeSingle();
@@ -318,8 +327,8 @@ async function loadAll(){
   MEM=DEFAULT_MEM.map(d=>{const row=(mem||[]).find(x=>x.program_key===d.g);return row?Object.assign({},d,{tier:row.tier||d.tier,num:row.number||d.num}):Object.assign({},d);});
   for(const d of DEFAULT_MEM){if(!(mem||[]).find(x=>x.program_key===d.g)){await sb.from('memberships').upsert({user_id:user.id,program_key:d.g,tier:d.tier,number:d.num});}}
 }
-async function saveProfile(){if(user)await sb.from('profiles').upsert({user_id:user.id,clean_photo:settings.cleanPhoto});}
-async function saveMembership(i){const m=MEM[i];if(user)await sb.from('memberships').upsert({user_id:user.id,program_key:m.g,tier:m.tier,number:m.num});}
+async function saveProfile(){if(user){await sb.from('profiles').upsert({user_id:user.id,clean_photo:settings.cleanPhoto});}else{saveLocal();}}
+async function saveMembership(i){const m=MEM[i];if(user){await sb.from('memberships').upsert({user_id:user.id,program_key:m.g,tier:m.tier,number:m.num});}else{saveLocal();}}
 function resizeImg(dataURL,max){return new Promise(res=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;const sc=Math.min(1,max/Math.max(w,h));const cw=Math.round(w*sc),ch=Math.round(h*sc);const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;cv.getContext('2d').drawImage(img,0,0,cw,ch);res(cv.toDataURL('image/jpeg',0.82));};img.onerror=()=>res(dataURL);img.src=dataURL;});}
 
 /* ---------- loyalty ---------- */
@@ -401,18 +410,25 @@ $('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new 
 $('addSave').onclick=async()=>{
   const btn=$('addSave');btn.disabled=true;btn.textContent='保存中…';
   const g=activeGroup,hotel=$('fHotel').value.trim()||$('fBrand').value;
+  const base={brand:$('fBrand').value,hotel,city:$('fCity').value.trim()||'—',country:$('fCountry').value.trim()||'—',nights:+$('fNights').value||1,date:new Date().toISOString().slice(0,7)};
   try{
-    let photo_url=null;
-    if(pendingPhoto){
-      const path=`${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-      const up=await sb.storage.from('keycards').upload(path,dataURLtoBlob(pendingPhoto),{contentType:'image/jpeg'});
-      if(!up.error)photo_url=sb.storage.from('keycards').getPublicUrl(path).data.publicUrl;
+    if(user){
+      let photo_url=null;
+      if(pendingPhoto){
+        const path=`${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+        const up=await sb.storage.from('keycards').upload(path,dataURLtoBlob(pendingPhoto),{contentType:'image/jpeg'});
+        if(!up.error)photo_url=sb.storage.from('keycards').getPublicUrl(path).data.publicUrl;
+      }
+      const ins=await sb.from('cards').insert({user_id:user.id,group_key:g,brand:base.brand,hotel:base.hotel,city:base.city,country:base.country,nights:base.nights,stay_date:base.date,photo_url}).select().single();
+      if(ins.error)throw ins.error;
+      const d=ins.data;
+      cards[g].unshift({id:d.id,brand:d.brand,hotel:d.hotel,city:d.city,country:d.country,nights:d.nights,date:d.stay_date,photo:d.photo_url});
+    }else{
+      let photo=null;
+      if(pendingPhoto)photo=await resizeImg(pendingPhoto,900);
+      cards[g].unshift(Object.assign({id:'L'+Date.now().toString(36),photo},base));
+      saveLocal();
     }
-    const row={user_id:user.id,group_key:g,brand:$('fBrand').value,hotel,city:$('fCity').value.trim()||'—',country:$('fCountry').value.trim()||'—',nights:+$('fNights').value||1,stay_date:new Date().toISOString().slice(0,7),photo_url};
-    const ins=await sb.from('cards').insert(row).select().single();
-    if(ins.error)throw ins.error;
-    const d=ins.data;
-    cards[g].unshift({id:d.id,brand:d.brand,hotel:d.hotel,city:d.city,country:d.country,nights:d.nights,date:d.stay_date,photo:d.photo_url});
     $('addSheet').classList.remove('on');renderGrid(false);
   }catch(e){alert('保存失败：'+(e.message||e));}
   btn.disabled=false;btn.textContent='保存到卡包';
@@ -493,14 +509,29 @@ function setupSettings(){
   $('toggleClean').onclick=()=>{settings.cleanPhoto=!settings.cleanPhoto;sw.classList.toggle('on',settings.cleanPhoto);saveProfile();renderGroups();if(activeGroup&&$('gridLevel').style.display!=='none')renderGrid(false);};
 }
 /* ---------- auth + boot ---------- */
-function showAuth(){$('authScreen').style.display='flex';}
+function showAuth(){$('authMsg').textContent='';$('authScreen').style.display='flex';}
 function hideAuth(){$('authScreen').style.display='none';}
+function updateAuthUI(){
+  if(user){
+    $('meEmail').textContent=user.email;
+    $('avatarLetter').textContent=(user.email||'K')[0].toUpperCase();
+    $('meSub').textContent='酒店收藏家 · 已云端同步';
+    $('meNote').textContent='会员号/等级可编辑；合格夜按各集团住宿自动累计。数据已云端同步，多设备通用。';
+    $('btnAuth').textContent='退出登录';
+  }else{
+    $('meEmail').textContent='游客模式';
+    $('avatarLetter').textContent='K';
+    $('meSub').textContent='本地浏览中 · 登录后多设备同步';
+    $('meNote').textContent='当前为游客模式，数据仅存在此设备。登录后房卡云端同步、多设备通用。';
+    $('btnAuth').textContent='登录 / 注册 · 同步云端';
+  }
+}
 async function afterLogin(){
   hideAuth();
-  $('meEmail').textContent=user.email;
-  $('avatarLetter').textContent=(user.email||'K')[0].toUpperCase();
   await loadAll();
-  setupSettings();renderGroups();
+  setupSettings();updateAuthUI();renderGroups();
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelector('.tab[data-tab="scCollection"]').classList.add('on');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('scCollection').classList.add('on');
 }
 async function doAuth(mode){
   const email=$('authEmail').value.trim(),pw=$('authPw').value,msg=$('authMsg');
@@ -509,16 +540,21 @@ async function doAuth(mode){
   const res=mode==='signup'?await sb.auth.signUp({email,password:pw}):await sb.auth.signInWithPassword({email,password:pw});
   if(res.error){msg.textContent=res.error.message;return;}
   if(res.data&&res.data.session){user=res.data.session.user;msg.textContent='';await afterLogin();}
-  else{msg.textContent='注册成功！请点"登录"。（若提示需验证邮箱，去 Supabase 关闭邮箱验证即可免验证）';}
+  else{msg.textContent='注册成功！请直接点"登录"进入。';}
 }
 $('btnSignin').onclick=()=>doAuth('signin');
 $('btnSignup').onclick=()=>doAuth('signup');
-$('btnLogout').onclick=async()=>{await sb.auth.signOut();location.reload();};
+$('authClose').onclick=hideAuth;
+$('authSkip').onclick=hideAuth;
+$('btnAuth').onclick=async()=>{if(user){await sb.auth.signOut();location.reload();}else{showAuth();}};
 $('authPw').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth('signin');});
 (async function boot(){
-  try{const {data}=await sb.auth.getSession();
-    if(data&&data.session){user=data.session.user;await afterLogin();}else{showAuth();}
-  }catch(e){showAuth();}
+  try{
+    const {data}=await sb.auth.getSession();
+    if(data&&data.session){user=data.session.user;await loadAll();}
+    else{loadLocal();}
+  }catch(e){loadLocal();}
+  setupSettings();updateAuthUI();renderGroups();
 })();
 </script>
 </body>
