@@ -312,9 +312,9 @@ const DEFAULT_CARDS={
   {brand:'Alila',hotel:'Alila Wuzhen',city:'乌镇',country:'中国',nights:2,date:'2024-09'}]
 };
 const DEFAULT_MEM=[
- {g:'m',p:'Marriott Bonvoy',zh:'万豪旅享家',tier:'银卡 Silver',tc:'#9AA0A6',num:'•••• •••• 4821'},
- {g:'h',p:'Hilton Honors',zh:'希尔顿荣誉客会',tier:'银卡 Silver',tc:'#9AA0A6',num:'•••• •••• 7390'},
- {g:'y',p:'World of Hyatt',zh:'凯悦天地',tier:'会员 Member',tc:'#7C8B89',num:'•••• •••• 1564'}
+ {g:'m',p:'Marriott Bonvoy',zh:'万豪旅享家',tier:'普通会员',tc:'#9AA0A6',num:''},
+ {g:'h',p:'Hilton Honors',zh:'希尔顿荣誉客会',tier:'普通会员',tc:'#9AA0A6',num:''},
+ {g:'y',p:'World of Hyatt',zh:'凯悦天地',tier:'会员 Member',tc:'#7C8B89',num:''}
 ];
 const TIERS={m:['普通会员','银卡 Silver','金卡 Gold','白金 Platinum','钛金 Titanium','大使 Ambassador'],h:['普通会员','银卡 Silver','金卡 Gold','钻石 Diamond'],y:['会员 Member','探索家 Discoverist','环球客 Explorist','寰宇客 Globalist']};
 
@@ -343,8 +343,8 @@ async function loadAll(){
   cards={m:[],h:[],y:[]};
   (rows||[]).forEach(r=>{if(!cards[r.group_key])cards[r.group_key]=[];cards[r.group_key].push({id:r.id,brand:r.brand,hotel:r.hotel,city:r.city,country:r.country,nights:r.nights,date:r.stay_date,photo:r.photo_url});});
   const {data:mem}=await sb.from('memberships').select('*').eq('user_id',user.id);
-  MEM=DEFAULT_MEM.map(d=>{const row=(mem||[]).find(x=>x.program_key===d.g);return row?Object.assign({},d,{tier:row.tier||d.tier,num:row.number||d.num}):Object.assign({},d);});
-  for(const d of DEFAULT_MEM){if(!(mem||[]).find(x=>x.program_key===d.g)){await sb.from('memberships').upsert({user_id:user.id,program_key:d.g,tier:d.tier,number:d.num});}}
+  MEM=DEFAULT_MEM.map(d=>{const row=(mem||[]).find(x=>x.program_key===d.g);return row?Object.assign({},d,{tier:row.tier||d.tier,num:row.number||''}):Object.assign({},d);});
+  
 }
 async function saveProfile(){if(user){await sb.from('profiles').upsert({user_id:user.id,clean_photo:settings.cleanPhoto});}else{saveLocal();}}
 async function saveMembership(i){const m=MEM[i];if(user){await sb.from('memberships').upsert({user_id:user.id,program_key:m.g,tier:m.tier,number:m.num});}else{saveLocal();}}
@@ -513,7 +513,7 @@ $('saveShare').onclick=()=>{const cv=$('shareCanvas');const a=document.createEle
 function renderMe(){
   $('memberships').innerHTML=MEM.map((m,i)=>{const ti=tierInfo(m.g);const nextTxt=ti.next?`距 ${ti.next.name} 还差 ${ti.next.n-ti.nts} 晚`:'已达住宿最高档';
     return `<div class="mcard"><div class="mtop"><div><div class="mp"><span class="gdot" style="background:${GROUPS[m.g].ac}"></span>${m.zh}</div><div class="mpe">${m.p}</div></div><span class="tier" style="background:${m.tc}22;color:${m.tc};border:1px solid ${m.tc}55">${m.tier}</span></div>
-    <div class="mnum"><input value="${m.num}" data-i="${i}" class="mInput"><select data-i="${i}" class="mSel">${TIERS[m.g].map(t=>`<option ${t===m.tier?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="mnum"><input value="${m.num}" data-i="${i}" class="mInput" placeholder="输入会员号 / Membership #"><select data-i="${i}" class="mSel">${TIERS[m.g].map(t=>`<option ${t===m.tier?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="loy" style="margin-top:12px"><div class="loybar"><i style="width:${ti.prog}%;background:${GROUPS[m.g].ac}"></i></div><div class="loyt">本年合格夜 <b>${ti.nts}</b> · ${nextTxt}</div></div></div>`;
   }).join('');
   document.querySelectorAll('.mSel').forEach(s=>s.onchange=e=>{const i=+e.target.dataset.i;MEM[i].tier=e.target.value;saveMembership(i);renderMe();});
