@@ -1,0 +1,12 @@
+{
+  "name": "Staybook · 房卡收藏",
+  "short_name": "Staybook",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B0A09",
+  "theme_color": "#0B0A09",
+  "icons": [
+    { "src": "/icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}
