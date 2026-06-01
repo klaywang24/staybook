@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Staybook · 房卡收藏</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#0B0A09;--bg2:#15110D;--panel:rgba(24,20,16,.92);--panel2:#1C1813;
@@ -141,6 +142,15 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .tab svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .tab.on{color:var(--accent)}
 .note{font-size:10.5px;color:var(--muted);text-align:center;padding:14px 20px;line-height:1.6}
+.auth{position:fixed;inset:0;z-index:90;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px}
+.auth .glow2{position:absolute;top:0;left:0;right:0;height:300px;background:radial-gradient(120% 80% at 50% -25%,rgba(232,137,58,.30),transparent 65%)}
+.authbox{width:100%;max-width:340px;text-align:center;position:relative;z-index:2}
+.authlogo{font-family:'Oswald';font-weight:600;font-size:40px;background:linear-gradient(120deg,var(--accent),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.authsub{color:var(--muted);font-size:13px;margin:6px 0 24px}
+.authbox input{width:100%;background:#0E0B08;border:1px solid var(--line);border-radius:11px;padding:13px 14px;color:var(--txt);font-size:15px;margin-bottom:11px;font-family:inherit}
+.authbox input:focus{outline:none;border-color:var(--accent)}
+.authbtns{display:flex;gap:10px;margin-top:4px}
+.authmsg{color:var(--accent);font-size:12px;margin-top:14px;min-height:16px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -178,7 +188,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 
   <div class="screen" id="scMe">
     <div class="phead"><div class="ey">Profile</div><h1>我</h1></div>
-    <div class="prof"><div class="avatar">K</div><div><div class="pn">Klay</div><div class="pe">酒店收藏家 · 3 个忠诚度计划</div></div></div>
+    <div class="prof"><div class="avatar" id="avatarLetter">K</div><div><div class="pn" id="meEmail">—</div><div class="pe">酒店收藏家 · 3 个忠诚度计划</div></div></div>
     <div class="sec-t">会员资格 · Memberships</div>
     <div id="memberships"></div>
     <div class="sec-t">设置 · Settings</div>
@@ -189,7 +199,19 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
       <div class="setrow">分享我的卡包<span class="ar">›</span></div>
       <div class="setrow">关于 Staybook<span class="ar">›</span></div>
     </div>
-    <div class="note">会员号/等级可编辑；合格夜按各集团住宿自动累计。</div>
+    <div class="note">会员号/等级可编辑；合格夜按各集团住宿自动累计。数据已云端同步。</div>
+    <button class="btn ghost" id="btnLogout" style="width:100%;margin-top:6px">退出登录</button>
+  </div>
+</div>
+
+<div class="auth" id="authScreen"><div class="glow2"></div>
+  <div class="authbox">
+    <div class="authlogo">Staybook</div>
+    <div class="authsub">登录后房卡收藏云端同步，多设备通用</div>
+    <input id="authEmail" type="email" placeholder="邮箱" autocomplete="email">
+    <input id="authPw" type="password" placeholder="密码（至少 6 位）" autocomplete="current-password">
+    <div class="authbtns"><button class="btn primary" id="btnSignin">登录</button><button class="btn ghost" id="btnSignup">注册</button></div>
+    <div class="authmsg" id="authMsg"></div>
   </div>
 </div>
 
@@ -274,18 +296,30 @@ const DEFAULT_MEM=[
 ];
 const TIERS={m:['普通会员','银卡 Silver','金卡 Gold','白金 Platinum','钛金 Titanium','大使 Ambassador'],h:['普通会员','银卡 Silver','金卡 Gold','钻石 Diamond'],y:['会员 Member','探索家 Discoverist','环球客 Explorist','寰宇客 Globalist']};
 
-let cards=JSON.parse(JSON.stringify(DEFAULT_CARDS));
+let cards={m:[],h:[],y:[]};
 let MEM=JSON.parse(JSON.stringify(DEFAULT_MEM));
 let activeGroup=null,pendingPhoto=null,settings={cleanPhoto:true};
 const $=id=>document.getElementById(id);
 
-/* ---------- storage (localStorage) ---------- */
-const KEY='staybook_v1';
-const Store={
- load(){try{const v=localStorage.getItem(KEY);return v?JSON.parse(v):null;}catch(e){return null;}},
- save(s){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
-};
-function persist(){Store.save({cards,mem:MEM,settings});}
+/* ---------- supabase ---------- */
+const SUPA_URL='https://fnfoyntovduuiweknsgj.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuZm95bnRvdmR1dWl3ZWtuc2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyODkyMjAsImV4cCI6MjA5NTg2NTIyMH0.Ktjuso6KlBF3bhwoWGULL8SWURJkbaVemu9KDxyw9Xg';
+const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+let user=null;
+function dataURLtoBlob(d){const p=d.split(',');const mime=(p[0].match(/:(.*?);/)||[])[1]||'image/jpeg';const bin=atob(p[1]);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return new Blob([u8],{type:mime});}
+async function loadAll(){
+  const {data:prof}=await sb.from('profiles').select('*').eq('user_id',user.id).maybeSingle();
+  if(prof){settings.cleanPhoto=prof.clean_photo!==false;}
+  else{await sb.from('profiles').insert({user_id:user.id,display_name:user.email,clean_photo:true});}
+  const {data:rows}=await sb.from('cards').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
+  cards={m:[],h:[],y:[]};
+  (rows||[]).forEach(r=>{if(!cards[r.group_key])cards[r.group_key]=[];cards[r.group_key].push({id:r.id,brand:r.brand,hotel:r.hotel,city:r.city,country:r.country,nights:r.nights,date:r.stay_date,photo:r.photo_url});});
+  const {data:mem}=await sb.from('memberships').select('*').eq('user_id',user.id);
+  MEM=DEFAULT_MEM.map(d=>{const row=(mem||[]).find(x=>x.program_key===d.g);return row?Object.assign({},d,{tier:row.tier||d.tier,num:row.number||d.num}):Object.assign({},d);});
+  for(const d of DEFAULT_MEM){if(!(mem||[]).find(x=>x.program_key===d.g)){await sb.from('memberships').upsert({user_id:user.id,program_key:d.g,tier:d.tier,number:d.num});}}
+}
+async function saveProfile(){if(user)await sb.from('profiles').upsert({user_id:user.id,clean_photo:settings.cleanPhoto});}
+async function saveMembership(i){const m=MEM[i];if(user)await sb.from('memberships').upsert({user_id:user.id,program_key:m.g,tier:m.tier,number:m.num});}
 function resizeImg(dataURL,max){return new Promise(res=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;const sc=Math.min(1,max/Math.max(w,h));const cw=Math.round(w*sc),ch=Math.round(h*sc);const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;cv.getContext('2d').drawImage(img,0,0,cw,ch);res(cv.toDataURL('image/jpeg',0.82));};img.onerror=()=>res(dataURL);img.src=dataURL;});}
 
 /* ---------- loyalty ---------- */
@@ -364,7 +398,25 @@ function openAdd(g){$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g]
 $('addCancel').onclick=()=>$('addSheet').classList.remove('on');
 $('pickPhoto').onclick=()=>$('photoInput').click();
 $('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async ev=>{pendingPhoto=await resizeImg(ev.target.result,900);$('photoPrev').style.backgroundImage=`url('${pendingPhoto}')`;};r.readAsDataURL(f);};
-$('addSave').onclick=()=>{const hotel=$('fHotel').value.trim()||$('fBrand').value;const c={id:Math.random(),brand:$('fBrand').value,hotel,city:$('fCity').value.trim()||'—',country:$('fCountry').value.trim()||'—',nights:+$('fNights').value||1,date:new Date().toISOString().slice(0,7),photo:pendingPhoto};cards[activeGroup].unshift(c);$('addSheet').classList.remove('on');renderGrid(false);persist();};
+$('addSave').onclick=async()=>{
+  const btn=$('addSave');btn.disabled=true;btn.textContent='保存中…';
+  const g=activeGroup,hotel=$('fHotel').value.trim()||$('fBrand').value;
+  try{
+    let photo_url=null;
+    if(pendingPhoto){
+      const path=`${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+      const up=await sb.storage.from('keycards').upload(path,dataURLtoBlob(pendingPhoto),{contentType:'image/jpeg'});
+      if(!up.error)photo_url=sb.storage.from('keycards').getPublicUrl(path).data.publicUrl;
+    }
+    const row={user_id:user.id,group_key:g,brand:$('fBrand').value,hotel,city:$('fCity').value.trim()||'—',country:$('fCountry').value.trim()||'—',nights:+$('fNights').value||1,stay_date:new Date().toISOString().slice(0,7),photo_url};
+    const ins=await sb.from('cards').insert(row).select().single();
+    if(ins.error)throw ins.error;
+    const d=ins.data;
+    cards[g].unshift({id:d.id,brand:d.brand,hotel:d.hotel,city:d.city,country:d.country,nights:d.nights,date:d.stay_date,photo:d.photo_url});
+    $('addSheet').classList.remove('on');renderGrid(false);
+  }catch(e){alert('保存失败：'+(e.message||e));}
+  btn.disabled=false;btn.textContent='保存到卡包';
+};
 
 /* ---------- globe ---------- */
 function renderGlobe(){
@@ -429,8 +481,8 @@ function renderMe(){
     <div class="mnum"><input value="${m.num}" data-i="${i}" class="mInput"><select data-i="${i}" class="mSel">${TIERS[m.g].map(t=>`<option ${t===m.tier?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="loy" style="margin-top:12px"><div class="loybar"><i style="width:${ti.prog}%;background:${GROUPS[m.g].ac}"></i></div><div class="loyt">本年合格夜 <b>${ti.nts}</b> · ${nextTxt}</div></div></div>`;
   }).join('');
-  document.querySelectorAll('.mSel').forEach(s=>s.onchange=e=>{MEM[+e.target.dataset.i].tier=e.target.value;persist();renderMe();});
-  document.querySelectorAll('.mInput').forEach(s=>s.onchange=e=>{MEM[+e.target.dataset.i].num=e.target.value;persist();});
+  document.querySelectorAll('.mSel').forEach(s=>s.onchange=e=>{const i=+e.target.dataset.i;MEM[i].tier=e.target.value;saveMembership(i);renderMe();});
+  document.querySelectorAll('.mInput').forEach(s=>s.onchange=e=>{const i=+e.target.dataset.i;MEM[i].num=e.target.value;saveMembership(i);});
 }
 
 /* ---------- tabs + init ---------- */
@@ -438,13 +490,35 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelect
 
 function setupSettings(){
   const sw=$('swClean');sw.classList.toggle('on',settings.cleanPhoto);
-  $('toggleClean').onclick=()=>{settings.cleanPhoto=!settings.cleanPhoto;sw.classList.toggle('on',settings.cleanPhoto);persist();renderGroups();if(activeGroup&&$('gridLevel').style.display!=='none')renderGrid(false);};
+  $('toggleClean').onclick=()=>{settings.cleanPhoto=!settings.cleanPhoto;sw.classList.toggle('on',settings.cleanPhoto);saveProfile();renderGroups();if(activeGroup&&$('gridLevel').style.display!=='none')renderGrid(false);};
 }
-(function init(){
-  const saved=Store.load();
-  if(saved&&saved.cards){cards=saved.cards;if(saved.mem&&saved.mem.length)MEM=saved.mem;if(saved.settings)settings=Object.assign(settings,saved.settings);}
-  ['m','h','y'].forEach(g=>{if(!cards[g])cards[g]=[];cards[g].forEach(c=>{if(c.id==null)c.id=Math.random();});});
+/* ---------- auth + boot ---------- */
+function showAuth(){$('authScreen').style.display='flex';}
+function hideAuth(){$('authScreen').style.display='none';}
+async function afterLogin(){
+  hideAuth();
+  $('meEmail').textContent=user.email;
+  $('avatarLetter').textContent=(user.email||'K')[0].toUpperCase();
+  await loadAll();
   setupSettings();renderGroups();
+}
+async function doAuth(mode){
+  const email=$('authEmail').value.trim(),pw=$('authPw').value,msg=$('authMsg');
+  if(!email||!pw){msg.textContent='请输入邮箱和密码';return;}
+  msg.textContent='处理中…';
+  const res=mode==='signup'?await sb.auth.signUp({email,password:pw}):await sb.auth.signInWithPassword({email,password:pw});
+  if(res.error){msg.textContent=res.error.message;return;}
+  if(res.data&&res.data.session){user=res.data.session.user;msg.textContent='';await afterLogin();}
+  else{msg.textContent='注册成功！请点"登录"。（若提示需验证邮箱，去 Supabase 关闭邮箱验证即可免验证）';}
+}
+$('btnSignin').onclick=()=>doAuth('signin');
+$('btnSignup').onclick=()=>doAuth('signup');
+$('btnLogout').onclick=async()=>{await sb.auth.signOut();location.reload();};
+$('authPw').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth('signin');});
+(async function boot(){
+  try{const {data}=await sb.auth.getSession();
+    if(data&&data.session){user=data.session.user;await afterLogin();}else{showAuth();}
+  }catch(e){showAuth();}
 })();
 </script>
 </body>
