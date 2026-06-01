@@ -91,7 +91,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .dinfo .drow{display:flex;gap:26px;margin-top:14px}
 .dinfo .drow .dn{font-family:'Oswald';font-weight:600;font-size:20px}
 .dinfo .drow .dl{font-size:9.5px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-family:'Oswald'}
-.dclose{position:fixed;top:22px;right:22px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:61}
+.dclose{position:fixed;top:22px;right:22px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:61}.dDel{display:block;width:100%;margin-top:18px;background:transparent;border:1px solid #5a2a2a;color:#e87a7a;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit}.dDel:active{background:rgba(232,122,122,.12)}
 .sheet-add{position:fixed;left:50%;transform:translateX(-50%) translateY(100%);bottom:0;width:100%;max-width:480px;z-index:70;background:#16120E;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 20px max(24px,env(safe-area-inset-bottom));transition:transform .35s cubic-bezier(.3,.9,.3,1);max-height:88vh;overflow-y:auto}
 .sheet-add.on{transform:translateX(-50%) translateY(0)}
 .sheet-add h3{font-family:'Oswald';font-weight:600;font-size:19px;margin-bottom:4px}
@@ -239,7 +239,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 
 <div class="ov-detail" id="ovDetail">
   <button class="dclose" id="dClose">✕</button>
-  <div><div class="dcard" id="dCard"></div><div class="dinfo" id="dInfo"></div></div>
+  <div><div class="dcard" id="dCard"></div><div class="dinfo" id="dInfo"></div><button class="dDel" id="dDelete">删除这张房卡</button></div>
 </div>
 
 <div class="sheet-add" id="addSheet">
@@ -322,7 +322,7 @@ let cards={m:[],h:[],y:[]};
 let MEM=JSON.parse(JSON.stringify(DEFAULT_MEM));
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function maskNum(s){s=(s||'').toString().trim();if(!s)return '';var t=s.split(' ').join('').slice(-4);return '•••• '+t;}
-let activeGroup=null,pendingPhoto=null,settings={cleanPhoto:true};
+let activeGroup=null,pendingPhoto=null,detailCard=null,settings={cleanPhoto:true};
 const $=id=>document.getElementById(id);
 
 /* ---------- supabase ---------- */
@@ -415,12 +415,14 @@ function flyIn(){
 $('bkGroup').onclick=()=>{$('gridLevel').style.display='none';$('grpLevel').style.display='block';renderGroups();};
 
 /* ---------- detail ---------- */
-function openDetail(c){
+function openDetail(c){detailCard=c;
   const card=$('dCard');card.className='dcard';card.innerHTML=cardFace(c);if(c.photo)card.classList.add('photo');
   $('dInfo').innerHTML=`<h3>${c.hotel}</h3><div class="dsub">${c.brand} · ${GROUPS[activeGroup].zh}</div><div class="drow"><div><div class="dn">${c.city}</div><div class="dl">城市</div></div><div><div class="dn">${c.nights||1}</div><div class="dl">入住晚数</div></div><div><div class="dn">${c.date||'—'}</div><div class="dl">日期</div></div></div>`;
   $('ovDetail').classList.add('on');
 }
 $('dClose').onclick=()=>$('ovDetail').classList.remove('on');
+async function deleteDetailCard(){const c=detailCard;if(!c)return;if(!confirm('确定删除这张房卡？删除后无法恢复。'))return;const g=activeGroup;try{if(user){const del=await sb.from('cards').delete().eq('id',c.id).eq('user_id',user.id);if(del.error)throw del.error;if(c.photo&&c.photo.indexOf('/keycards/')>-1){const path=c.photo.split('/keycards/')[1];if(path){try{await sb.storage.from('keycards').remove([path]);}catch(_){}}}}cards[g]=cards[g].filter(x=>x.id!==c.id);if(!user)saveLocal();$('ovDetail').classList.remove('on');renderGrid(false);renderGroups();if(typeof sbToast==='function')sbToast('已删除');}catch(e){alert('删除失败：'+(e.message||e));}}
+$('dDelete').onclick=deleteDetailCard;
 $('ovDetail').onclick=e=>{if(e.target===$('ovDetail'))$('ovDetail').classList.remove('on');};
 
 /* ---------- add ---------- */
