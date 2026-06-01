@@ -94,6 +94,8 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .dclose{position:fixed;top:22px;right:22px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:61}.dDel{display:block;width:100%;margin-top:18px;background:transparent;border:1px solid #5a2a2a;color:#e87a7a;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit}.dDel:active{background:rgba(232,122,122,.12)}
 .sheet-add{position:fixed;left:50%;transform:translateX(-50%) translateY(100%);bottom:0;width:100%;max-width:480px;z-index:70;background:#16120E;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 20px max(24px,env(safe-area-inset-bottom));transition:transform .35s cubic-bezier(.3,.9,.3,1);max-height:88vh;overflow-y:auto}
 .sheet-add.on{transform:translateX(-50%) translateY(0)}
+.sheet-mask{position:fixed;inset:0;z-index:69;background:rgba(6,5,4,.6);backdrop-filter:blur(3px);display:none}
+.sheet-mask.on{display:block}
 .sheet-add h3{font-family:'Oswald';font-weight:600;font-size:19px;margin-bottom:4px}
 .sheet-add .sh-sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
 .fld{margin-bottom:12px}
@@ -242,6 +244,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
   <div><div class="dcard" id="dCard"></div><div class="dinfo" id="dInfo"></div><button class="dDel" id="dDelete">删除这张房卡</button></div>
 </div>
 
+<div class="sheet-mask" id="addMask"></div>
 <div class="sheet-add" id="addSheet">
   <h3>添加房卡</h3><div class="sh-sub" id="addSubtitle"></div>
   <div class="fld"><label>子品牌</label><select id="fBrand"></select></div>
@@ -426,8 +429,8 @@ $('dDelete').onclick=deleteDetailCard;
 $('ovDetail').onclick=e=>{if(e.target===$('ovDetail'))$('ovDetail').classList.remove('on');};
 
 /* ---------- add ---------- */
-function openAdd(g){if(!user){showAuth();return;}$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option>${b}</option>`).join('');$('fHotel').value='';$('fCity').value='';$('fCountry').value='中国';$('fNights').value=1;pendingPhoto=null;$('photoPrev').style.backgroundImage='';$('addSheet').classList.add('on');}
-$('addCancel').onclick=()=>$('addSheet').classList.remove('on');
+function openAdd(g){if(!user){showAuth();return;}$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option>${b}</option>`).join('');$('fHotel').value='';$('fCity').value='';$('fCountry').value='中国';$('fNights').value=1;pendingPhoto=null;$('photoPrev').style.backgroundImage='';$('addSheet').classList.add('on');$('addMask').classList.add('on');}
+$('addCancel').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};$('addMask').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};
 $('pickPhoto').onclick=()=>$('photoInput').click();
 $('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async ev=>{pendingPhoto=await resizeImg(ev.target.result,900);$('photoPrev').style.backgroundImage=`url('${pendingPhoto}')`;};r.readAsDataURL(f);};
 $('addSave').onclick=async()=>{
@@ -452,7 +455,7 @@ $('addSave').onclick=async()=>{
       cards[g].unshift(Object.assign({id:'L'+Date.now().toString(36),photo},base));
       saveLocal();
     }
-    $('addSheet').classList.remove('on');renderGrid(false);
+    $('addSheet').classList.remove('on');$('addMask').classList.remove('on');renderGrid(false);
   }catch(e){alert('保存失败：'+(e.message||e));}
   btn.disabled=false;btn.textContent='保存到卡包';
 };
