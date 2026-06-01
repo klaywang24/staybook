@@ -408,7 +408,7 @@ $('dClose').onclick=()=>$('ovDetail').classList.remove('on');
 $('ovDetail').onclick=e=>{if(e.target===$('ovDetail'))$('ovDetail').classList.remove('on');};
 
 /* ---------- add ---------- */
-function openAdd(g){$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option>${b}</option>`).join('');$('fHotel').value='';$('fCity').value='';$('fCountry').value='中国';$('fNights').value=1;pendingPhoto=null;$('photoPrev').style.backgroundImage='';$('addSheet').classList.add('on');}
+function openAdd(g){if(!user){showAuth();return;}$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option>${b}</option>`).join('');$('fHotel').value='';$('fCity').value='';$('fCountry').value='中国';$('fNights').value=1;pendingPhoto=null;$('photoPrev').style.backgroundImage='';$('addSheet').classList.add('on');}
 $('addCancel').onclick=()=>$('addSheet').classList.remove('on');
 $('pickPhoto').onclick=()=>$('photoInput').click();
 $('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async ev=>{pendingPhoto=await resizeImg(ev.target.result,900);$('photoPrev').style.backgroundImage=`url('${pendingPhoto}')`;};r.readAsDataURL(f);};
