@@ -152,6 +152,9 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .authbtns{display:flex;gap:10px;margin-top:4px}
 .authmsg{color:var(--accent);font-size:12px;margin-top:14px;min-height:16px;line-height:1.5}
 .authskip{margin-top:16px;color:var(--muted);font-size:13px;cursor:pointer}.authskip:active{opacity:.6}
+.authdiv{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:12px}.authdiv:before,.authdiv:after{content:"";flex:1;height:1px;background:var(--line)}
+.gbtn{width:100%;background:#fff;color:#3c4043;border:none;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:600;padding:13px}
+.gbtn .gg{font-family:Arial,sans-serif;font-weight:800;font-size:16px;background:linear-gradient(90deg,#4285F4,#EA4335 38%,#FBBC05 68%,#34A853);-webkit-background-clip:text;background-clip:text;color:transparent}
 </style>
 </head>
 <body>
@@ -213,6 +216,8 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
     <input id="authEmail" type="email" placeholder="邮箱" autocomplete="email">
     <input id="authPw" type="password" placeholder="密码（至少 6 位）" autocomplete="current-password">
     <div class="authbtns"><button class="btn primary" id="btnSignin">登录</button><button class="btn ghost" id="btnSignup">注册</button></div>
+    <div class="authdiv"><span>或</span></div>
+    <button class="btn gbtn" id="btnGoogle"><span class="gg">G</span> 使用 Google 登录</button>
     <div class="authmsg" id="authMsg"></div>
     <div class="authskip" id="authSkip">先随便逛逛 →</div>
   </div>
@@ -544,6 +549,7 @@ async function doAuth(mode){
 }
 $('btnSignin').onclick=()=>doAuth('signin');
 $('btnSignup').onclick=()=>doAuth('signup');
+$('btnGoogle').onclick=async()=>{$('authMsg').textContent='跳转 Google…';const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin}});if(error)$('authMsg').textContent=error.message;};
 $('authClose').onclick=hideAuth;
 $('authSkip').onclick=hideAuth;
 $('btnAuth').onclick=async()=>{if(user){await sb.auth.signOut();location.reload();}else{showAuth();}};
