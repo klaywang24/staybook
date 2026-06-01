@@ -83,7 +83,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .addkc small{font-size:11px}
 .ov-detail{position:fixed;inset:0;z-index:60;background:rgba(6,5,4,.82);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:24px}
 .ov-detail.on{display:flex;animation:fade .25s}
-.dcard{width:min(420px,86vw);aspect-ratio:1.585/1;border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.7);animation:pop .3s cubic-bezier(.2,.9,.3,1.2);position:relative}
+.dcard{width:min(420px,86vw);aspect-ratio:1.585/1;border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.7);animation:pop .3s cubic-bezier(.2,.9,.3,1.2);position:relative}#dCard:not(.photo) .kcin{padding:24px 26px}#dCard .wt{font-size:12px;letter-spacing:.18em}#dCard .bn{font-size:30px;margin-top:4px}#dCard .cy{font-size:13px;margin-top:7px;letter-spacing:.14em}#dCard .mono{font-size:34px}#dCard .art{width:130px;height:96px;right:18px;bottom:26px}#dCard .nb{font-size:13px;top:16px;right:18px;padding:3px 12px}#dCard.photo .pn{left:22px;right:22px;bottom:20px}#dCard.photo .pn .bn2{font-size:22px}#dCard.photo .pn .cy2{font-size:12px}
 @keyframes pop{from{transform:scale(.82);opacity:0}to{transform:scale(1);opacity:1}}
 .dinfo{width:min(420px,86vw);margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
 .dinfo h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px}
@@ -91,7 +91,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .dinfo .drow{display:flex;gap:26px;margin-top:14px}
 .dinfo .drow .dn{font-family:'Oswald';font-weight:600;font-size:20px}
 .dinfo .drow .dl{font-size:9.5px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-family:'Oswald'}
-.dclose{position:fixed;top:22px;right:22px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:61}.dDel{display:block;width:100%;margin-top:18px;background:transparent;border:1px solid #5a2a2a;color:#e87a7a;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit}.dDel:active{background:rgba(232,122,122,.12)}
+.dclose{position:fixed;top:22px;right:22px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:61}.dDel{display:block;width:100%;margin-top:18px;background:transparent;border:1px solid #5a2a2a;color:#e87a7a;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit}.dDel:active{background:rgba(232,122,122,.12)}.dEdit{display:block;width:100%;margin-top:18px;background:var(--accent);border:none;color:#1A1208;padding:12px;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
 .sheet-add{position:fixed;left:50%;transform:translateX(-50%) translateY(100%);bottom:0;width:100%;max-width:480px;z-index:70;background:#16120E;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 20px max(24px,env(safe-area-inset-bottom));transition:transform .35s cubic-bezier(.3,.9,.3,1);max-height:88vh;overflow-y:auto}
 .sheet-add.on{transform:translateX(-50%) translateY(0)}
 .sheet-mask{position:fixed;inset:0;z-index:69;background:rgba(6,5,4,.6);backdrop-filter:blur(3px);display:none}
@@ -241,15 +241,16 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 
 <div class="ov-detail" id="ovDetail">
   <button class="dclose" id="dClose">✕</button>
-  <div><div class="dcard" id="dCard"></div><div class="dinfo" id="dInfo"></div><button class="dDel" id="dDelete">删除这张房卡</button></div>
+  <div><div class="dcard" id="dCard"></div><div class="dinfo" id="dInfo"></div><button class="dEdit" id="dEdit">编辑房卡</button><button class="dDel" id="dDelete">删除这张房卡</button></div>
 </div>
 
 <div class="sheet-mask" id="addMask"></div>
 <div class="sheet-add" id="addSheet">
-  <h3>添加房卡</h3><div class="sh-sub" id="addSubtitle"></div>
+  <h3 id="addTitle">添加房卡</h3><div class="sh-sub" id="addSubtitle"></div>
   <div class="fld"><label>子品牌</label><select id="fBrand"></select></div>
   <div class="fld"><label>酒店名称</label><input id="fHotel" placeholder="如 Waldorf Astoria Shanghai on the Bund"></div>
   <div class="frow"><div class="fld"><label>城市</label><input id="fCity" placeholder="上海"></div><div class="fld"><label>国家</label><input id="fCountry" value="中国"></div></div>
+  <div class="fld"><label>入住日期</label><input id="fDate" type="month"></div>
   <div class="frow"><div class="fld" style="flex:0 0 110px"><label>入住晚数</label><input id="fNights" type="number" value="1" min="1"></div>
     <div class="fld"><label>房卡照片（可选）</label><div class="photo-pick"><div class="pbtn" id="pickPhoto">拍照 / 选图</div><div class="photo-prev" id="photoPrev"></div></div></div></div>
   <input type="file" accept="image/*" id="photoInput" style="display:none">
@@ -325,7 +326,7 @@ let cards={m:[],h:[],y:[]};
 let MEM=JSON.parse(JSON.stringify(DEFAULT_MEM));
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function maskNum(s){s=(s||'').toString().trim();if(!s)return '';var t=s.split(' ').join('').slice(-4);return '•••• '+t;}
-let activeGroup=null,pendingPhoto=null,detailCard=null,settings={cleanPhoto:true};
+let activeGroup=null,pendingPhoto=null,detailCard=null,editingId=null,settings={cleanPhoto:true};
 const $=id=>document.getElementById(id);
 
 /* ---------- supabase ---------- */
@@ -426,36 +427,48 @@ function openDetail(c){detailCard=c;
 $('dClose').onclick=()=>$('ovDetail').classList.remove('on');
 async function deleteDetailCard(){const c=detailCard;if(!c)return;if(!confirm('确定删除这张房卡？删除后无法恢复。'))return;const g=activeGroup;try{if(user){const del=await sb.from('cards').delete().eq('id',c.id).eq('user_id',user.id);if(del.error)throw del.error;if(c.photo&&c.photo.indexOf('/keycards/')>-1){const path=c.photo.split('/keycards/')[1];if(path){try{await sb.storage.from('keycards').remove([path]);}catch(_){}}}}cards[g]=cards[g].filter(x=>x.id!==c.id);if(!user)saveLocal();$('ovDetail').classList.remove('on');renderGrid(false);renderGroups();if(typeof sbToast==='function')sbToast('已删除');}catch(e){alert('删除失败：'+(e.message||e));}}
 $('dDelete').onclick=deleteDetailCard;
+function openEdit(){const c=detailCard;if(!c)return;$('ovDetail').classList.remove('on');openAdd(activeGroup,c);}
+$('dEdit').onclick=openEdit;
 $('ovDetail').onclick=e=>{if(e.target===$('ovDetail'))$('ovDetail').classList.remove('on');};
 
 /* ---------- add ---------- */
-function openAdd(g){if(!user){showAuth();return;}$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option>${b}</option>`).join('');$('fHotel').value='';$('fCity').value='';$('fCountry').value='中国';$('fNights').value=1;pendingPhoto=null;$('photoPrev').style.backgroundImage='';$('addSheet').classList.add('on');$('addMask').classList.add('on');}
+function openAdd(g,edit){if(!user){showAuth();return;}editingId=edit?edit.id:null;$('addTitle').textContent=edit?'编辑房卡':'添加房卡';$('addSave').textContent=edit?'保存修改':'保存到卡包';$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option ${edit&&edit.brand===b?'selected':''}>${b}</option>`).join('');$('fHotel').value=edit?(edit.hotel||''):'';$('fCity').value=edit&&edit.city&&edit.city!=='—'?edit.city:'';$('fCountry').value=edit?(edit.country||'中国'):'中国';$('fNights').value=edit?(edit.nights||1):1;$('fDate').value=edit&&edit.date?edit.date:new Date().toISOString().slice(0,7);pendingPhoto=null;$('photoPrev').style.backgroundImage=edit&&edit.photo?`url('${edit.photo}')`:'';$('addSheet').classList.add('on');$('addMask').classList.add('on');}
 $('addCancel').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};$('addMask').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};
 $('pickPhoto').onclick=()=>$('photoInput').click();
 $('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async ev=>{pendingPhoto=await resizeImg(ev.target.result,900);$('photoPrev').style.backgroundImage=`url('${pendingPhoto}')`;};r.readAsDataURL(f);};
 $('addSave').onclick=async()=>{
   const btn=$('addSave');btn.disabled=true;btn.textContent='保存中…';
   const g=activeGroup,hotel=$('fHotel').value.trim()||$('fBrand').value;
-  const base={brand:$('fBrand').value,hotel,city:$('fCity').value.trim()||'—',country:$('fCountry').value.trim()||'—',nights:+$('fNights').value||1,date:new Date().toISOString().slice(0,7)};
+  const base={brand:$('fBrand').value,hotel,city:$('fCity').value.trim()||'—',country:$('fCountry').value.trim()||'—',nights:+$('fNights').value||1,date:$('fDate').value||new Date().toISOString().slice(0,7)};
   try{
     if(user){
-      let photo_url=null;
+      let photo_url;
       if(pendingPhoto){
         const path=`${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
         const up=await sb.storage.from('keycards').upload(path,dataURLtoBlob(pendingPhoto),{contentType:'image/jpeg'});
         if(!up.error)photo_url=sb.storage.from('keycards').getPublicUrl(path).data.publicUrl;
       }
-      const ins=await sb.from('cards').insert({user_id:user.id,group_key:g,brand:base.brand,hotel:base.hotel,city:base.city,country:base.country,nights:base.nights,stay_date:base.date,photo_url}).select().single();
-      if(ins.error)throw ins.error;
-      const d=ins.data;
-      cards[g].unshift({id:d.id,brand:d.brand,hotel:d.hotel,city:d.city,country:d.country,nights:d.nights,date:d.stay_date,photo:d.photo_url});
+      if(editingId){
+        const upd={group_key:g,brand:base.brand,hotel:base.hotel,city:base.city,country:base.country,nights:base.nights,stay_date:base.date};
+        if(photo_url!==undefined)upd.photo_url=photo_url;
+        const r=await sb.from('cards').update(upd).eq('id',editingId).eq('user_id',user.id).select().single();
+        if(r.error)throw r.error;const d=r.data;const arr=cards[g];const idx=arr.findIndex(x=>x.id===editingId);if(idx>-1)arr[idx]={id:d.id,brand:d.brand,hotel:d.hotel,city:d.city,country:d.country,nights:d.nights,date:d.stay_date,photo:d.photo_url};
+      }else{
+        const ins=await sb.from('cards').insert({user_id:user.id,group_key:g,brand:base.brand,hotel:base.hotel,city:base.city,country:base.country,nights:base.nights,stay_date:base.date,photo_url:photo_url||null}).select().single();
+        if(ins.error)throw ins.error;const d=ins.data;
+        cards[g].unshift({id:d.id,brand:d.brand,hotel:d.hotel,city:d.city,country:d.country,nights:d.nights,date:d.stay_date,photo:d.photo_url});
+      }
     }else{
-      let photo=null;
-      if(pendingPhoto)photo=await resizeImg(pendingPhoto,900);
-      cards[g].unshift(Object.assign({id:'L'+Date.now().toString(36),photo},base));
-      saveLocal();
+      const photo=pendingPhoto?await resizeImg(pendingPhoto,900):undefined;
+      if(editingId){
+        const arr=cards[g];const idx=arr.findIndex(x=>x.id===editingId);if(idx>-1){const ex=arr[idx];arr[idx]=Object.assign({},ex,base,{photo:photo!==undefined?photo:ex.photo});}
+        saveLocal();
+      }else{
+        cards[g].unshift(Object.assign({id:'L'+Date.now().toString(36),photo:photo||null},base));
+        saveLocal();
+      }
     }
-    $('addSheet').classList.remove('on');$('addMask').classList.remove('on');renderGrid(false);
+    $('addSheet').classList.remove('on');$('addMask').classList.remove('on');editingId=null;renderGrid(false);renderGroups();
   }catch(e){alert('保存失败：'+(e.message||e));}
   btn.disabled=false;btn.textContent='保存到卡包';
 };
