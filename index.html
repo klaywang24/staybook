@@ -249,7 +249,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
   <h3 id="addTitle">添加房卡</h3><div class="sh-sub" id="addSubtitle"></div>
   <div class="fld"><label>子品牌</label><select id="fBrand"></select></div>
   <div class="fld"><label>酒店名称</label><input id="fHotel" placeholder="如 Waldorf Astoria Shanghai on the Bund"></div>
-  <div class="frow"><div class="fld"><label>城市</label><input id="fCity" placeholder="上海"></div><div class="fld"><label>国家</label><input id="fCountry" value="中国"></div></div>
+  <div class="frow"><div class="fld"><label>国家</label><select id="fCountry"></select><input id="fCountryM" placeholder="手动输入国家" style="display:none;margin-top:8px"></div><div class="fld"><label>城市</label><select id="fCity"></select><input id="fCityM" placeholder="手动输入城市" style="display:none;margin-top:8px"></div></div>
   <div class="fld"><label>入住日期</label><input id="fDate" type="month"></div>
   <div class="frow"><div class="fld" style="flex:0 0 110px"><label>入住晚数</label><input id="fNights" type="number" value="1" min="1"></div>
     <div class="fld"><label>房卡照片（可选）</label><div class="photo-pick"><div class="pbtn" id="pickPhoto">拍照 / 选图</div><div class="photo-prev" id="photoPrev"></div></div></div></div>
@@ -293,6 +293,18 @@ const FLAG={'中国':'🇨🇳','日本':'🇯🇵','美国':'🇺🇸','法国'
 const CONT={'中国':'亚洲','日本':'亚洲','泰国':'亚洲','新加坡':'亚洲','阿联酋':'亚洲','马尔代夫':'亚洲','美国':'北美洲','法国':'欧洲','英国':'欧洲'};
 const CITY_LL={'上海':[121.47,31.23],'北京':[116.4,39.9],'杭州':[120.15,30.27],'成都':[104.07,30.57],'三亚':[109.51,18.25],'南京':[118.8,32.06],'长沙':[112.94,28.23],'武汉':[114.3,30.59],'乌镇':[120.49,30.74],'东京':[139.69,35.69],'深圳':[114.06,22.54],'广州':[113.26,23.13],'苏州':[120.62,31.3],'重庆':[106.55,29.56],'青岛':[120.38,36.07],'西安':[108.94,34.34],'大阪':[135.5,34.69],'京都':[135.77,35.01],'冲绳':[127.68,26.21],'纽约':[-74,40.71],'洛杉矶':[-118.24,34.05],'巴黎':[2.35,48.86],'伦敦':[-0.13,51.51],'曼谷':[100.5,13.76],'迪拜':[55.27,25.2],'新加坡':[103.82,1.35]};
 const COUNTRY_LL={'中国':[104,35],'日本':[138,37],'美国':[-98,39],'法国':[2.5,47],'英国':[-2,54],'泰国':[101,15],'阿联酋':[54,24],'新加坡':[103.8,1.35],'马尔代夫':[73.2,3.2]};
+Object.assign(CITY_LL,{'香港':[114.17,22.32],'澳门':[113.54,22.19],'台北':[121.56,25.03],'札幌':[141.35,43.06],'名古屋':[136.91,35.18],'福冈':[130.4,33.59],'首尔':[126.98,37.57],'釜山':[129.08,35.18],'济州':[126.53,33.51],'普吉':[98.39,7.88],'清迈':[98.99,18.79],'芭提雅':[100.88,12.93],'吉隆坡':[101.69,3.14],'槟城':[100.33,5.41],'亚庇':[116.07,5.98],'巴厘岛':[115.19,-8.41],'雅加达':[106.85,-6.21],'胡志明市':[106.66,10.82],'河内':[105.83,21.03],'岘港':[108.22,16.05],'马累':[73.51,4.18],'阿布扎比':[54.37,24.45],'旧金山':[-122.42,37.77],'拉斯维加斯':[-115.14,36.17],'芝加哥':[-87.63,41.88],'檀香山':[-157.86,21.31],'西雅图':[-122.33,47.61],'波士顿':[-71.06,42.36],'多伦多':[-79.38,43.65],'温哥华':[-123.12,49.28],'爱丁堡':[-3.19,55.95],'曼彻斯特':[-2.24,53.48],'尼斯':[7.27,43.7],'罗马':[12.5,41.9],'米兰':[9.19,45.46],'威尼斯':[12.33,45.44],'佛罗伦萨':[11.26,43.77],'巴塞罗那':[2.17,41.39],'马德里':[-3.7,40.42],'柏林':[13.4,52.52],'慕尼黑':[11.58,48.14],'法兰克福':[8.68,50.11],'苏黎世':[8.54,47.37],'日内瓦':[6.14,46.2],'悉尼':[151.21,-33.87],'墨尔本':[144.96,-37.81]});
+Object.assign(COUNTRY_LL,{'韩国':[127.5,36],'马来西亚':[102,4],'印度尼西亚':[120,-2],'越南':[106,16],'加拿大':[-106,56],'意大利':[12.5,42],'西班牙':[-3.7,40],'德国':[10,51],'瑞士':[8,47],'澳大利亚':[134,-25]});
+Object.assign(FLAG,{'韩国':'🇰🇷','马来西亚':'🇲🇾','印度尼西亚':'🇮🇩','越南':'🇻🇳','加拿大':'🇨🇦','意大利':'🇮🇹','西班牙':'🇪🇸','德国':'🇩🇪','瑞士':'🇨🇭','澳大利亚':'🇦🇺'});
+Object.assign(CONT,{'韩国':'亚洲','马来西亚':'亚洲','印度尼西亚':'亚洲','越南':'亚洲','加拿大':'北美洲','意大利':'欧洲','西班牙':'欧洲','德国':'欧洲','瑞士':'欧洲','澳大利亚':'大洋洲'});
+const COUNTRY_CITIES={'中国':['上海','北京','广州','深圳','杭州','成都','重庆','南京','苏州','武汉','西安','长沙','青岛','三亚','乌镇','香港','澳门','台北'],'日本':['东京','大阪','京都','冲绳','札幌','名古屋','福冈'],'韩国':['首尔','釜山','济州'],'泰国':['曼谷','普吉','清迈','芭提雅'],'新加坡':['新加坡'],'马来西亚':['吉隆坡','槟城','亚庇'],'印度尼西亚':['巴厘岛','雅加达'],'越南':['胡志明市','河内','岘港'],'马尔代夫':['马累'],'阿联酋':['迪拜','阿布扎比'],'美国':['纽约','洛杉矶','旧金山','拉斯维加斯','芝加哥','檀香山','西雅图','波士顿'],'加拿大':['多伦多','温哥华'],'英国':['伦敦','爱丁堡','曼彻斯特'],'法国':['巴黎','尼斯'],'意大利':['罗马','米兰','威尼斯','佛罗伦萨'],'西班牙':['巴塞罗那','马德里'],'德国':['柏林','慕尼黑','法兰克福'],'瑞士':['苏黎世','日内瓦'],'澳大利亚':['悉尼','墨尔本']};
+function fillCountrySel(sel){sel.innerHTML=Object.keys(COUNTRY_CITIES).map(c=>'<option>'+c+'</option>').join('')+'<option value="__other">其他…</option>';}
+function fillCitySel(country){const list=COUNTRY_CITIES[country]||[];$('fCity').innerHTML='<option value="">选择城市</option>'+list.map(c=>'<option>'+c+'</option>').join('')+'<option value="__other">其他…</option>';}
+function onCountryChange(){const v=$('fCountry').value;if(v==='__other'){$('fCountryM').style.display='block';$('fCity').style.display='none';$('fCityM').style.display='block';}else{$('fCountryM').style.display='none';$('fCountryM').value='';fillCitySel(v);$('fCity').style.display='block';$('fCity').value='';$('fCityM').style.display='none';$('fCityM').value='';}}
+function onCityChange(){if($('fCountry').value==='__other'){$('fCityM').style.display='block';return;}$('fCityM').style.display=($('fCity').value==='__other')?'block':'none';}
+function setLocation(country,city){if(country&&COUNTRY_CITIES[country]){$('fCountry').value=country;$('fCountryM').style.display='none';$('fCountryM').value='';fillCitySel(country);$('fCity').style.display='block';if(city&&COUNTRY_CITIES[country].indexOf(city)>-1){$('fCity').value=city;$('fCityM').style.display='none';$('fCityM').value='';}else if(city){$('fCity').value='__other';$('fCityM').style.display='block';$('fCityM').value=city;}else{$('fCity').value='';$('fCityM').style.display='none';$('fCityM').value='';}}else{$('fCountry').value='__other';$('fCountryM').style.display='block';$('fCountryM').value=country||'';$('fCity').style.display='none';$('fCityM').style.display='block';$('fCityM').value=city||'';}}
+function getCountry(){return $('fCountryM').style.display!=='none'?$('fCountryM').value.trim():$('fCountry').value;}
+function getCity(){return $('fCityM').style.display!=='none'?$('fCityM').value.trim():$('fCity').value;}
 
 const DEFAULT_CARDS={
  m:[{brand:'Ritz-Carlton',hotel:'The Ritz-Carlton Shanghai, Pudong',city:'上海',country:'中国',nights:2,date:'2025-04'},
@@ -432,14 +444,15 @@ $('dEdit').onclick=openEdit;
 $('ovDetail').onclick=e=>{if(e.target===$('ovDetail'))$('ovDetail').classList.remove('on');};
 
 /* ---------- add ---------- */
-function openAdd(g,edit){if(!user){showAuth();return;}editingId=edit?edit.id:null;$('addTitle').textContent=edit?'编辑房卡':'添加房卡';$('addSave').textContent=edit?'保存修改':'保存到卡包';$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option ${edit&&edit.brand===b?'selected':''}>${b}</option>`).join('');$('fHotel').value=edit?(edit.hotel||''):'';$('fCity').value=edit&&edit.city&&edit.city!=='—'?edit.city:'';$('fCountry').value=edit?(edit.country||'中国'):'中国';$('fNights').value=edit?(edit.nights||1):1;$('fDate').value=edit&&edit.date?edit.date:new Date().toISOString().slice(0,7);pendingPhoto=null;$('photoPrev').style.backgroundImage=edit&&edit.photo?`url('${edit.photo}')`:'';$('addSheet').classList.add('on');$('addMask').classList.add('on');}
+function openAdd(g,edit){if(!user){showAuth();return;}editingId=edit?edit.id:null;$('addTitle').textContent=edit?'编辑房卡':'添加房卡';$('addSave').textContent=edit?'保存修改':'保存到卡包';$('addSubtitle').textContent=`${GROUPS[g].zh} · ${GROUPS[g].en}`;$('fBrand').innerHTML=GROUPS[g].brands.map(b=>`<option ${edit&&edit.brand===b?'selected':''}>${b}</option>`).join('');$('fHotel').value=edit?(edit.hotel||''):'';fillCountrySel($('fCountry'));setLocation(edit?(edit.country||'中国'):'中国',edit&&edit.city&&edit.city!=='—'?edit.city:'');$('fNights').value=edit?(edit.nights||1):1;$('fDate').value=edit&&edit.date?edit.date:new Date().toISOString().slice(0,7);pendingPhoto=null;$('photoPrev').style.backgroundImage=edit&&edit.photo?`url('${edit.photo}')`:'';$('addSheet').classList.add('on');$('addMask').classList.add('on');}
 $('addCancel').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};$('addMask').onclick=()=>{$('addSheet').classList.remove('on');$('addMask').classList.remove('on');};
 $('pickPhoto').onclick=()=>$('photoInput').click();
+$('fCountry').onchange=onCountryChange;$('fCity').onchange=onCityChange;
 $('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async ev=>{pendingPhoto=await resizeImg(ev.target.result,900);$('photoPrev').style.backgroundImage=`url('${pendingPhoto}')`;};r.readAsDataURL(f);};
 $('addSave').onclick=async()=>{
   const btn=$('addSave');btn.disabled=true;btn.textContent='保存中…';
   const g=activeGroup,hotel=$('fHotel').value.trim()||$('fBrand').value;
-  const base={brand:$('fBrand').value,hotel,city:$('fCity').value.trim()||'—',country:$('fCountry').value.trim()||'—',nights:+$('fNights').value||1,date:$('fDate').value||new Date().toISOString().slice(0,7)};
+  const base={brand:$('fBrand').value,hotel,city:getCity()||'—',country:getCountry()||'—',nights:+$('fNights').value||1,date:$('fDate').value||new Date().toISOString().slice(0,7)};
   try{
     if(user){
       let photo_url;
