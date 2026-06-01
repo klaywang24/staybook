@@ -141,7 +141,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
 .mcard .mpe{font-size:9.5px;color:var(--muted);font-family:'Oswald';letter-spacing:.1em;text-transform:uppercase}
 .tier{font-family:'Oswald';font-size:11px;font-weight:600;border-radius:20px;padding:4px 11px;letter-spacing:.04em}
 .mcard .mnum{display:flex;align-items:center;gap:10px;margin-top:12px}
-.mcard .mnum input{flex:1;background:#0E0B08;border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--txt);font-family:'Oswald';letter-spacing:.12em;font-size:13px}
+.mcard .mnum input{flex:1;min-width:0;background:#0E0B08;border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--txt);font-family:'Oswald';letter-spacing:.12em;font-size:13px}.mcard .mnum .eyeBtn{flex:0 0 auto;background:#0E0B08;border:1px solid var(--line);border-radius:9px;padding:8px 9px;color:var(--txt);font-size:15px;line-height:1;cursor:pointer}
 .mcard .mnum select{background:#0E0B08;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--txt);font-size:12px;font-family:inherit}
 .setlist{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:6px}
 .setrow{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer}
@@ -212,10 +212,10 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans SC',-apple-sys
     <div class="sec-t">设置 · Settings</div>
     <div class="setlist">
       <div class="setrow" id="toggleClean">干净照片模式<span style="font-size:11px;color:var(--muted);margin-left:7px">原样显示上传的房卡</span><span class="sw" id="swClean"></span></div>
-      <div class="setrow">通知提醒<span class="ar">›</span></div>
-      <div class="setrow">数据备份与导出<span class="ar">›</span></div>
-      <div class="setrow">分享我的卡包<span class="ar">›</span></div>
-      <div class="setrow">关于 Staybook<span class="ar">›</span></div>
+      <div class="setrow" id="setNotify">通知提醒<span class="ar">›</span></div>
+      <div class="setrow" id="setBackup">数据备份与导出<span class="ar">›</span></div>
+      <div class="setrow" id="setShare">分享我的卡包<span class="ar">›</span></div>
+      <div class="setrow" id="setAbout">关于 Staybook<span class="ar">›</span></div>
     </div>
     <div class="note" id="meNote">会员号/等级可编辑；合格夜按各集团住宿自动累计。当前为游客模式，数据仅存在此设备；登录后云端同步、多设备通用。</div>
     <button class="btn primary" id="btnAuth" style="width:100%;margin-top:10px">登录 / 注册 · 同步云端</button>
@@ -320,6 +320,8 @@ const TIERS={m:['普通会员','银卡 Silver','金卡 Gold','白金 Platinum','
 
 let cards={m:[],h:[],y:[]};
 let MEM=JSON.parse(JSON.stringify(DEFAULT_MEM));
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function maskNum(s){s=(s||'').toString().trim();if(!s)return '';var t=s.split(' ').join('').slice(-4);return '•••• '+t;}
 let activeGroup=null,pendingPhoto=null,settings={cleanPhoto:true};
 const $=id=>document.getElementById(id);
 
@@ -513,11 +515,11 @@ $('saveShare').onclick=()=>{const cv=$('shareCanvas');const a=document.createEle
 function renderMe(){
   $('memberships').innerHTML=MEM.map((m,i)=>{const ti=tierInfo(m.g);const nextTxt=ti.next?`距 ${ti.next.name} 还差 ${ti.next.n-ti.nts} 晚`:'已达住宿最高档';
     return `<div class="mcard"><div class="mtop"><div><div class="mp"><span class="gdot" style="background:${GROUPS[m.g].ac}"></span>${m.zh}</div><div class="mpe">${m.p}</div></div><span class="tier" style="background:${m.tc}22;color:${m.tc};border:1px solid ${m.tc}55">${m.tier}</span></div>
-    <div class="mnum"><input value="${m.num}" data-i="${i}" class="mInput" placeholder="输入会员号 / Membership #"><select data-i="${i}" class="mSel">${TIERS[m.g].map(t=>`<option ${t===m.tier?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="mnum"><input value="${maskNum(m.num)}" data-real="${esc(m.num)}" data-rev="0" data-i="${i}" class="mInput" placeholder="输入会员号 / Membership #" autocomplete="off"><button type="button" class="eyeBtn" data-i="${i}" aria-label="显示/隐藏会员号">👁</button><select data-i="${i}" class="mSel">${TIERS[m.g].map(t=>`<option ${t===m.tier?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="loy" style="margin-top:12px"><div class="loybar"><i style="width:${ti.prog}%;background:${GROUPS[m.g].ac}"></i></div><div class="loyt">本年合格夜 <b>${ti.nts}</b> · ${nextTxt}</div></div></div>`;
   }).join('');
   document.querySelectorAll('.mSel').forEach(s=>s.onchange=e=>{const i=+e.target.dataset.i;MEM[i].tier=e.target.value;saveMembership(i);renderMe();});
-  document.querySelectorAll('.mInput').forEach(s=>s.onchange=e=>{const i=+e.target.dataset.i;MEM[i].num=e.target.value;saveMembership(i);});
+  document.querySelectorAll('.mInput').forEach(inp=>{inp.onfocus=e=>{e.target.value=e.target.dataset.real||'';};inp.onblur=e=>{const i=+e.target.dataset.i;const v=e.target.value.trim();e.target.dataset.real=v;MEM[i].num=v;saveMembership(i);if(e.target.dataset.rev!=='1')e.target.value=maskNum(v);};});document.querySelectorAll('.eyeBtn').forEach(b=>b.onclick=ev=>{const i=+ev.currentTarget.dataset.i;const inp=document.querySelector('.mInput[data-i="'+i+'"]');if(!inp)return;const rev=inp.dataset.rev==='1'?'0':'1';inp.dataset.rev=rev;ev.currentTarget.style.opacity=rev==='1'?'1':'.55';if(document.activeElement!==inp){inp.value=rev==='1'?(inp.dataset.real||''):maskNum(inp.dataset.real);}});
 }
 
 /* ---------- tabs + init ---------- */
@@ -576,6 +578,13 @@ $('authPw').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth('signin');}
   }catch(e){loadLocal();}
   setupSettings();updateAuthUI();renderGroups();
 })();
+</script>
+<script>
+function sbToast(msg){let t=document.getElementById('sbToast');if(!t){t=document.createElement('div');t.id='sbToast';t.style.cssText='position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#1a1410;color:#fff;border:1px solid #2a2018;padding:10px 16px;border-radius:10px;font-size:13px;z-index:9999;opacity:0;transition:opacity .25s;max-width:82%;text-align:center;pointer-events:none';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(function(){t.style.opacity='0';},2200);}
+function sbExport(){try{var total=Object.values(cards).reduce(function(s,a){return s+a.length;},0);var data={app:'Staybook',exported_at:new Date().toISOString(),total_cards:total,cards:cards,memberships:MEM.map(function(m){return {program:m.p,tier:m.tier,number:m.num||''};}),settings:settings};var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='staybook-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},1500);sbToast('已导出备份 JSON');}catch(e){sbToast('导出失败');}}
+async function sbShare(){var total=Object.values(cards).reduce(function(s,a){return s+a.length;},0);var txt='我在 Staybook 收藏了 '+total+' 张酒店房卡 \u2728';var url=location.origin;try{if(navigator.share){await navigator.share({title:'Staybook',text:txt,url:url});}else{await navigator.clipboard.writeText(txt+' '+url);sbToast('链接已复制到剪贴板');}}catch(e){}}
+function sbAbout(){var o=document.getElementById('aboutOv');if(!o){o=document.createElement('div');o.id='aboutOv';o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9998;padding:24px';o.innerHTML='<div style="background:#14100C;border:1px solid #2a2018;border-radius:16px;max-width:340px;width:100%;padding:22px 20px;color:#EDE6DD"><div style="font-family:Oswald,sans-serif;font-size:20px;letter-spacing:.04em;margin-bottom:10px">Staybook</div><div style="font-size:13px;line-height:1.7;color:#B8AFA4">酒店房卡收藏 · 住宿足迹与忠诚度追踪。<br>收藏住过的房卡，点亮走过的世界。<br><br>数据存于你的账户 / 本机，可随时在「数据备份与导出」里导出。</div><button id="aboutClose" style="margin-top:16px;width:100%;background:#E8893A;border:none;color:#1a0f07;font-weight:600;padding:11px;border-radius:10px;cursor:pointer;font-family:inherit">好的</button></div>';document.body.appendChild(o);o.addEventListener('click',function(e){if(e.target===o)o.style.display='none';});o.querySelector('#aboutClose').onclick=function(){o.style.display='none';};}o.style.display='flex';}
+(function(){function bind(){var m={setNotify:function(){sbToast('通知提醒开发中，敬请期待');},setBackup:sbExport,setShare:sbShare,setAbout:sbAbout};Object.keys(m).forEach(function(id){var el=document.getElementById(id);if(el)el.onclick=m[id];});}if(document.readyState!=='loading')bind();else document.addEventListener('DOMContentLoaded',bind);})();
 </script>
 </body>
 </html>
